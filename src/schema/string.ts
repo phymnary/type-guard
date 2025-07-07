@@ -11,7 +11,7 @@ const validateString: ValidateFn<string> = (value, options) => {
   };
 };
 
-export const string = () => createBuilder(validateString);
+export const string = createBuilder(validateString);
 
 const uuidRegex =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-8][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,7 +26,7 @@ const validateUuid: ValidateFn<string> = (value, options) => {
   };
 };
 
-export const uuid = createBuilder({ validator: validateUuid });
+export const uuid = validateUuid;
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -40,4 +40,4 @@ const validateEmail: ValidateFn<string> = (value, options) => {
   };
 };
 
-export const email = createBuilder({ validator: validateEmail });
+export const email = validateEmail;
