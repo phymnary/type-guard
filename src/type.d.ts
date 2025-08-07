@@ -8,7 +8,9 @@ export type FirstClassJsType =
   | "symbol"
   | "function";
 
-type Obj = Record<string | number | symbol, unknown>;
+export type primative = string | number | symbol;
+
+type Obj = Record<primative, unknown>;
 
 /**
  * Validate options
@@ -25,36 +27,30 @@ export type ValidateError = {
   isSafeGuard?: boolean;
 };
 
-export type ErrorDetails<TMetadata extends object = never> = [
-  TMetadata
-] extends never
-  ? { message?: string }
-  : {
-      message?: string;
-      metadata: TMetadata;
-    };
+export type ErrorDetails = {
+  message?: string;
+  metadata?: unknown;
+};
 
-export type ValidateResult<TMetadata extends object | never> =
-  | (ValidateError & ErrorDetails<TMetadata>)
-  | undefined;
+export type ValidateResult = (ValidateError & ErrorDetails) | undefined;
 
 export type ValidateFn<T> =
   | ((value: T) => ValidateError | undefined)
   | ((value: T, options: ValidateOptions) => ValidateError | undefined);
 
-export type Validator<TValue, TMetadata extends object = never> = (
+export type Validator<TValue> = (
   value: TValue,
   options: ValidateOptions
-) => ValidateResult<TMetadata>;
+) => ValidateResult;
 
-type SchemaValidationErrorDetails<T extends object> =
-  T extends (infer U extends object)[]
-    ? { [id: number]: SchemaValidationErrorDetails<U> }
-    : {
-        [K in keyof T]?: T[K] extends Obj
-          ? SchemaValidationErrorDetails<T[K]>
-          : ValidateResult<T>;
-      };
+type SchemaValidationErrorDetails<T extends object> = T extends (infer U extends
+  object)[]
+  ? { [id: number]: SchemaValidationErrorDetails<U> }
+  : {
+      [K in keyof T]?: T[K] extends Obj
+        ? SchemaValidationErrorDetails<T[K]>
+        : ValidateResult<T>;
+    };
 
 export type SchemaValidateResult<TValue extends object> =
   | {

@@ -1,4 +1,4 @@
-import { createBuilder } from "@/builder";
+import { createBuilder } from "@/validators/builder";
 import type { ValidateFn } from "@/type";
 
 const validateString: ValidateFn<string> = (value, options) => {
@@ -6,7 +6,7 @@ const validateString: ValidateFn<string> = (value, options) => {
 
   if (typeof value === "string") return undefined;
   return {
-    description: `value ${verbose ? value + " " : ""} is not a string`,
+    description: `value ${verbose ? value + " " : ""}is not a string`,
     isSafeGuard: true,
   };
 };
