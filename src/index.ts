@@ -1,3 +1,3 @@
-export * from "type";
-export * from "schema";
-export * from "validators";
+export * from "./types";
+export * from "./schema";
+export * from "./validators";

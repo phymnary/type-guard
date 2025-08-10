@@ -1,5 +1,5 @@
 {
-  "name": "@phymnary/validator",
+  "name": "@phymnary/type-guard",
   "version": "1.0.0",
   "description": "",
   "scripts": {},
@@ -9,6 +9,7 @@
   "type": "module",
   "devDependencies": {
     "prettier": "3.6.2",
-    "typescript": "^5.*"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }

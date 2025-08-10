@@ -1,26 +1,34 @@
-import {
-  ValidateOptions,
-  ValidateFn,
-  ErrorDetails,
-  ValidateResult,
-} from "@/type";
+import type { ValidateFn, FieldValidateResult } from "@/validators";
 
-type Props<TSchema extends object, TValue> = {
+type TargetOrFunc<TParam, TReturn> = TReturn | ((param: TParam) => TReturn);
+
+type SchemaValidator<TSchema, TValue> = (
+  obj: TSchema,
+  value: TValue
+) => FieldValidateResult;
+
+type Props<TSchema extends object, TValue, TMetadata extends object = never> = {
   validate: ValidateFn<TValue>;
-  extensions: ValidateFn<TValue>[];
+  extensions: FieldValidatorBuilder<TSchema, TValue>[];
   condition?: (value: TSchema) => boolean;
-} & ErrorDetails;
+  message?: TargetOrFunc<TSchema, string>;
+  metadata?: TargetOrFunc<TSchema, TMetadata>;
+};
 
-function validatorBuilder<TSchema extends object, TValue>(
-  components: Props<TSchema, TValue>
-) {
-  function withMessage(message: string) {
+function createValidatorBuilderCore<
+  TSchema extends object,
+  TValue,
+  TMetadata extends object = never,
+>(components: Props<TSchema, TValue, TMetadata>) {
+  function withMessage(message: TargetOrFunc<TSchema, string>) {
     components.message = message;
-    return validatorBuilder(components);
+    return createValidatorBuilderCore(components);
   }
 
-  function withMetadata<TMetadata extends object>(metadata: TMetadata) {
-    return validatorBuilder<TSchema, TValue>({
+  function withMetadata<TMetadata extends object>(
+    metadata: TargetOrFunc<TSchema, TMetadata>
+  ) {
+    return createValidatorBuilderCore<TSchema, TValue, TMetadata>({
       ...components,
       metadata: metadata,
     });
@@ -28,48 +36,53 @@ function validatorBuilder<TSchema extends object, TValue>(
 
   function when(condition: (value: TSchema) => boolean) {
     components.condition = condition;
-    return validatorBuilder(components);
+    return createValidatorBuilderCore(components);
   }
 
-  function createSchemaValidator() {
-    return function (
-      schema: TSchema,
-      value: TValue,
-      options: ValidateOptions
-    ): ValidateResult {
-      const { validate, extensions, metadata, condition, message } = components;
-      const results: ValidateResult[] = [];
+  function createFieldValidator(): SchemaValidator<TSchema, TValue>[] {
+    const { validate, extensions, metadata, condition, message } = components;
 
-      if (condition?.(schema)) return;
+    const base: SchemaValidator<TSchema, TValue> = (obj, value) => {
+      if (condition?.(obj)) return;
 
-      const validators = [validate, ...extensions];
-      let i = 0;
+      const error = validate(value);
 
-      while (i < validate.length) {
-        const result = validators[i](value, options);
-        if (result) {
-          results.push(result);
-        }
-      }
+      if (error)
+        return {
+          ...error,
+          message: typeof message === "function" ? message(obj) : message,
+          metadata: typeof metadata === "function" ? metadata(obj) : metadata,
+        };
     };
+
+    return [base, ...extensions.flatMap((ext) => ext.createFieldValidator())];
   }
 
   return {
     withMessage,
     withMetadata,
     when,
-    createSchemaValidator,
+    createFieldValidator,
   };
 }
+
+export type FieldValidatorBuilder<TSchema extends object, TValue> = ReturnType<
+  typeof createValidatorBuilderCore<TSchema, TValue>
+>;
+
+export type FieldValidatorBuilderFactory<TSchema extends object, TValue> = ((
+  ...extensions: FieldValidatorBuilder<TSchema, TValue>[]
+) => FieldValidatorBuilder<TSchema, TValue>) & { validate: ValidateFn<TValue> };
 
 export function createBuilder<TSchema extends object, TValue>(
   validate: ValidateFn<TValue>
 ) {
-  const fn = (...extensions: ValidateFn<TValue>[]) =>
-    validatorBuilder<TSchema, TValue>({
+  const fn: FieldValidatorBuilderFactory<TSchema, TValue> = (
+    ...extensions: FieldValidatorBuilder<TSchema, TValue>[]
+  ) =>
+    createValidatorBuilderCore<TSchema, TValue>({
       validate,
       extensions,
-      metadata: undefined as never,
     });
 
   fn.validate = validate;

@@ -1,12 +1,11 @@
-import { createBuilder } from "@/validators/builder";
-import type { ValidateFn } from "@/type";
+import { createBuilder } from "./builder";
+import type { ValidateFn } from "./types";
 
-const validateString: ValidateFn<string> = (value, options) => {
-  const { verbose } = options;
+const validateString: ValidateFn<string> = (value) => {
+  if (typeof value === "string") return;
 
-  if (typeof value === "string") return undefined;
   return {
-    description: `value ${verbose ? value + " " : ""}is not a string`,
+    description: `expected a string, received ${typeof value}`,
     isSafeGuard: true,
   };
 };
@@ -16,13 +15,11 @@ export const string = createBuilder(validateString);
 const uuidRegex =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-8][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const validateUuid: ValidateFn<string> = (value, options) => {
-  const { verbose } = options;
-
+const validateUuid: ValidateFn<string> = (value) => {
   if (value.match(uuidRegex)) return;
 
   return {
-    description: `value ${verbose ? value + " " : ""} is not a UUID`,
+    description: `expected an UUID`,
   };
 };
 
@@ -30,13 +27,11 @@ export const uuid = validateUuid;
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const validateEmail: ValidateFn<string> = (value, options) => {
-  const { verbose } = options;
-
+const validateEmail: ValidateFn<string> = (value) => {
   if (value.match(emailRegex)) return;
 
   return {
-    description: `value ${verbose ? value + " " : ""} is not an email`,
+    description: `expected an email`,
   };
 };
 
